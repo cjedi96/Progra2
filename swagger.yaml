@@ -1,0 +1,138 @@
+openapi: 3.0.3
+info:
+  title: Students API (JWT)
+  version: 1.0.0
+  description: CRUD de alumnos con autenticación JWT.
+servers:
+  - url: http://localhost:3000
+paths:
+  /health:
+    get:
+      summary: Health check
+      responses:
+        '200':
+          description: OK
+  /api/auth/register:
+    post:
+      summary: Registrar usuario
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                username: { type: string, example: admin }
+                password: { type: string, example: admin123 }
+                role: { type: string, enum: [user, admin], example: admin }
+      responses:
+        '201': { description: Creado }
+        '409': { description: Usuario existe }
+  /api/auth/login:
+    post:
+      summary: Iniciar sesión
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                username: { type: string, example: admin }
+                password: { type: string, example: admin123 }
+      responses:
+        '200':
+          description: Token emitido
+  /api/students:
+    get:
+      summary: Listar alumnos
+      parameters:
+        - in: query
+          name: page
+          schema: { type: integer, minimum: 1, example: 1 }
+        - in: query
+          name: limit
+          schema: { type: integer, minimum: 1, maximum: 100, example: 10 }
+        - in: query
+          name: q
+          schema: { type: string, example: Carlos }
+      security: [{ bearerAuth: [] }]
+      responses:
+        '200': { description: Lista paginada }
+    post:
+      summary: Crear alumno (admin)
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [firstName, lastName, carnet, birthDate]
+              properties:
+                firstName: { type: string, example: Carlos }
+                lastName: { type: string, example: Martinez }
+                carnet: { type: string, example: 20250001 }
+                birthDate: { type: string, format: date, example: 2000-01-31 }
+      responses:
+        '201': { description: Creado }
+        '409': { description: Carnet repetido }
+  /api/students/{id}:
+    get:
+      summary: Obtener alumno por id
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - in: path
+          name: id
+          schema: { type: integer }
+          required: true
+      responses:
+        '200': { description: Ok }
+        '404': { description: No encontrado }
+    put:
+      summary: Actualizar alumno (admin)
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - in: path
+          name: id
+          schema: { type: integer }
+          required: true
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                firstName: { type: string }
+                lastName: { type: string }
+                carnet: { type: string }
+                birthDate: { type: string, format: date }
+                isActive: { type: boolean }
+      responses:
+        '200': { description: Actualizado }
+        '404': { description: No encontrado }
+    delete:
+      summary: Eliminar alumno (admin)
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - in: path
+          name: id
+          schema: { type: integer }
+          required: true
+      responses:
+        '204': { description: Eliminado }
+        '404': { description: No encontrado }
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  /api/auth/me:
+    get:
+      summary: Ver usuario autenticado
+      security: [{ bearerAuth: [] }]
+      responses:
+        '200': { description: Datos del token }
